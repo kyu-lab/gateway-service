@@ -1,16 +1,5 @@
-# Getting Started
-
-### Reference Documentation
-
-For further reference, please consider the following sections:
-
-* [Official Gradle documentation](https://docs.gradle.org)
-* [Spring Boot Gradle Plugin Reference Guide](https://docs.spring.io/spring-boot/3.4.3/gradle-plugin)
-* [Create an OCI image](https://docs.spring.io/spring-boot/3.4.3/gradle-plugin/packaging-oci-image.html)
-
-### Additional Links
-
-These additional references should also help you:
-
-* [Gradle Build Scans – insights for your project's build](https://scans.gradle.com#gradle)
-
+# API Gate Way Server
+Spring Gateway로 구성되어 있습니다.  
+라우팅과 토큰 인증 작업을 주로 합니다.
+## 실행환경
+- openJdk 17
