@@ -27,12 +27,12 @@ public class JwtFilter implements GlobalFilter {
 		}
 
 		String path = exchange.getRequest().getURI().getPath();
-		if (path.startsWith("/api/users/login") || path.startsWith("/api/users/sign-up")) {
+		if (path.startsWith("/api/users/login") || path.startsWith("/api/users/signUp")) {
 			return chain.filter(exchange);
 		}
 
 		String token = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-		if (StringUtils.hasText(token)) {
+		if (!StringUtils.hasText(token)) {
 			exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
 			return exchange.getResponse().setComplete();
 		}
