@@ -32,6 +32,10 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
+  data:
+    redis:
+      port: 6379
+      host: localhost
 eureka:
   client:
     enabled: false
@@ -48,4 +52,4 @@ management:
     env:
       enabled: true
 jwt:
-  secret: SGVsbG9AI2UzV3JvbGQhQCN9RHxkc2prZC0oOTBNeVNlY3JldCEyMyRGREcjMw==
+  access-token: SGVsbG9AI2UzV3JvbGQhQCN9RHxkc2prZC0oOTBNeVNlY3JldCEyMyRGREcjMw==
