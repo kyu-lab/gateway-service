@@ -10,16 +10,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -27,7 +25,6 @@ import reactor.core.publisher.Mono;
 public class JwtFilter implements GlobalFilter {
 
 	private final TokenService tokenService;
-	private final StringRedisTemplate redisTemplate;
 	private final ObjectMapper objectMapper;
 
 	@Override
@@ -35,13 +32,20 @@ public class JwtFilter implements GlobalFilter {
 		ServerHttpRequest request = exchange.getRequest();
 
 		// GET 요청은 공개경로로 인증없이 통과한다.
-		if (request.getMethod().equals(HttpMethod.GET)) {
+		String path = exchange.getRequest().getURI().getPath();
+		if (!path.startsWith("/api/users/refresh") && request.getMethod().equals(HttpMethod.GET)) {
+			return chain.filter(exchange);
+		}
+
+		if (path.startsWith("/api/users/logout")) {
 			return chain.filter(exchange);
 		}
 
 		// 사용자 로그인과 회원가입에는 인증없이 통과한다.
-		String path = exchange.getRequest().getURI().getPath();
-		if (path.startsWith("/api/users/login") || path.startsWith("/api/users/signUp")) {
+		if (path.startsWith("/api/users/login") || path.startsWith("/api/users/signup")) {
+			if (request.getCookies().containsKey("refresh-token")) {
+				return sendErrorResponse(exchange, HttpStatus.BAD_REQUEST, "Already Login");
+			}
 			return chain.filter(exchange);
 		}
 
@@ -53,8 +57,6 @@ public class JwtFilter implements GlobalFilter {
 		if (!token.startsWith("Bearer ")) {
 			return sendErrorResponse(exchange, HttpStatus.UNAUTHORIZED, "Please Header check again");
 		}
-		token = token.substring(7);
-
 
 		/*
 		 * 토큰 인증/인가 방법
@@ -63,28 +65,55 @@ public class JwtFilter implements GlobalFilter {
 		 * 3. 리프레쉬 토큰이 없을 경우 접근을 금지
 		 */
 		// 토큰이 있는 사용자가 페이지에 다시 접속시 재로그인 시킨다.
-		TokenStatus status = tokenService.validateAccessToken(token);
+		token = token.substring(7);
+		TokenStatus status;
+		if (Objects.isNull(request.getHeaders().getFirst("X-Needs-Refresh"))) {
+			status = tokenService.validateToken(token, true);
+		} else {
+			status = TokenStatus.REFRESH;
+		}
+
 		return switch (status) {
 			case MISSING, INVALID -> {
 				log.info("잘못된 토큰 : {}", token);
 				yield sendErrorResponse(exchange, HttpStatus.UNAUTHORIZED, "Invalid Token");
 			}
 			case EXPIRED, EXPIRING -> {
-				if (path.startsWith("/api/users/refresh") && request.getHeaders().getFirst("X-refresh-check").equals("true")) {
-					yield chain.filter(exchange);
-				}
-				String userId = tokenService.parseToken(token);
-				if (!redisTemplate.hasKey("refresh-" + userId)) {
-					yield sendErrorResponse(exchange, HttpStatus.UNAUTHORIZED, "Invalid Token");
+				String userId = tokenService.getSubject(token);
+
+				// 리프레쉬 토큰이 없는 사용자는 재발급을 허용하지 않는다.
+				if (!tokenService.hasRefreshToken(userId)) {
+					yield sendErrorResponse(exchange, HttpStatus.UNAUTHORIZED, "Please login again");
 				}
 
 				// 토큰이 만료되었다면 다시 토큰을 발급받도록 주소를 보낸다.
 				exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-				exchange.getResponse().getHeaders().add("X-Refresh-URL", "/api/users/refresh?userId=" + userId);
+				exchange.getResponse().getHeaders().add("X-Refresh-URL", "/api/users/refresh");
 				exchange.getResponse().getHeaders().add("Access-Control-Expose-Headers", "X-Refresh-URL");
 				yield exchange.getResponse().setComplete();
 			}
 			case OK -> chain.filter(exchange);
+			case REFRESH -> {
+				String userId = tokenService.getSubject(token);
+
+				// 리프레쉬 토큰이 없는 사용자는 재발급을 허용하지 않는다.
+				if (!tokenService.hasRefreshToken(userId)) {
+					yield sendErrorResponse(exchange, HttpStatus.UNAUTHORIZED, "Please login again");
+				}
+
+				// 토큰 재요청 주소가 다를 경우
+				if (!path.startsWith("/api/users/refresh")) {
+					yield sendErrorResponse(exchange, HttpStatus.BAD_REQUEST, "Wrong request");
+				}
+
+				String refreshToken = request.getCookies().getFirst("refresh-token").getValue();
+				if (!tokenService.validRefreshToken(refreshToken, userId)) {
+					log.error("인증되지 않은 리프레쉬 토큰 : ${}", refreshToken);
+					yield sendErrorResponse(exchange, HttpStatus.BAD_REQUEST, "Invalid Refresh Token!");
+				}
+
+				yield chain.filter(exchange);
+			}
 			default -> {
 				log.error("예상치 못한 토큰 상태: {}", status);
 				yield sendErrorResponse(exchange, HttpStatus.INTERNAL_SERVER_ERROR, "Sever Can`t be Parsing Token : " + token);

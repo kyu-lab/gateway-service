@@ -17,7 +17,7 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOriginPatterns: "*"
+            allowedOriginPatterns: "http://localhost:5173" # 필요에 따라 설정
             allowedMethods:
               - GET
               - POST
@@ -25,6 +25,11 @@ spring:
               - DELETE
               - OPTION
             allowedHeaders: "*"
+            allowCredentials: true
+            exposedHeaders: # 커스텀 헤더
+              - X-Refresh-URL
+              - X-Needs-Refresh
+              - X-GATE-WAY-KEY
         add-to-simple-url-handler-mapping: true
       metrics:
         enabled: true
@@ -52,4 +57,5 @@ management:
     env:
       enabled: true
 jwt:
+  refresh-token: ZHNrbGZqYWRrbHNmamxrZHNhZmtqbGFzZGZsaztqemxrY3h2anpjdnBvY2l4emp2ODlwajMyNDk4ZkAkQCFAJGZkZ3N6ZHNhZmFkc2Y=
   access-token: SGVsbG9AI2UzV3JvbGQhQCN9RHxkc2prZC0oOTBNeVNlY3JldCEyMyRGREcjMw==

@@ -5,8 +5,10 @@ import kyulab.gatewayserver.domain.TokenStatus;
 import kyulab.gatewayserver.util.SecretUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -16,11 +18,20 @@ import java.util.concurrent.TimeUnit;
 public class TokenService {
 
 	private final SecretUtil secretUtil;
+	private final StringRedisTemplate redisTemplate;
 
-	public TokenStatus validateAccessToken(String token) throws JwtException {
+	/**
+	 * 전달받은 토큰의 유효성 검사를 한다.
+	 * @param token 토큰값
+	 * @param isAccess 액세스 토큰 여부 (false일 경우 리프레쉬 토큰)
+	 * @return TokenStatus 현재 사용중이 토큰의 상태값
+	 * @throws JwtException 토큰이 정상적이지 않을 경우
+	 */
+	public TokenStatus validateToken(String token, boolean isAccess) throws JwtException {
 		try {
+			SecretKey signingKey = isAccess ? secretUtil.getAccessKey() : secretUtil.getRefreshKey();
 			Jws<Claims> claims = Jwts.parserBuilder()
-					.setSigningKey(secretUtil.getAccessKey())
+					.setSigningKey(signingKey)
 					.build()
 					.parseClaimsJws(token);
 
@@ -45,7 +56,7 @@ public class TokenService {
 		}
 	}
 
-	public String parseToken(String token) {
+	public String getSubject(String token) {
 		try {
 			return Jwts.parserBuilder()
 					.setSigningKey(secretUtil.getAccessKey())
@@ -62,6 +73,19 @@ public class TokenService {
 			log.error("Jwt Error : " + e.getMessage());
 			throw new RuntimeException("Jwt Error!");
 		}
+	}
+
+	public boolean hasRefreshToken(String userId) {
+		return redisTemplate.hasKey("refresh-" + userId);
+	}
+
+	public boolean validRefreshToken(String refreshToken, String userId) {
+		String storeRefreshToken = redisTemplate.opsForValue().get("refresh-" + userId);
+		TokenStatus status = validateToken(storeRefreshToken, false);
+		if (TokenStatus.OK != status) {
+			return false;
+		}
+		return refreshToken.equals(storeRefreshToken);
 	}
 
 }
