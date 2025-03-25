@@ -1,5 +1,7 @@
 server:
   port: 8000
+  http2:
+    enabled: true
 spring:
   application:
     name: gateway-server
@@ -27,6 +29,7 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
             exposedHeaders: # 커스텀 헤더
+              - Location
               - X-Refresh-URL
               - X-Needs-Refresh
               - X-GATE-WAY-KEY

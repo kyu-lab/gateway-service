@@ -37,6 +37,11 @@ public class JwtFilter implements GlobalFilter {
 			return chain.filter(exchange);
 		}
 
+		// api간 통신
+		if (path.startsWith("/gateway")) {
+			return chain.filter(exchange);
+		}
+
 		if (path.startsWith("/api/users/logout")) {
 			return chain.filter(exchange);
 		}
