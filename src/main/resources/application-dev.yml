@@ -1,19 +1,19 @@
-server:
-  port: 8000
 spring:
-  application:
-    name: gateway-server
   cloud:
     gateway:
       routes:
         - id: users-service
           uri: http://localhost:8001
           predicates:
-            - Path=/api/users/**
+            - Path=/api/users/**, /gateway/users/**
+        - id: post-service
+          uri: http://localhost:8002
+          predicates:
+            - Path=/api/post/**, /api/comment/**, /api/group/**, /gateway/group/**
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOriginPatterns: "*"
+            allowedOriginPatterns: "http://localhost:5173" # 필요에 따라 설정
             allowedMethods:
               - GET
               - POST
@@ -21,6 +21,12 @@ spring:
               - DELETE
               - OPTION
             allowedHeaders: "*"
+            allowCredentials: true
+            exposedHeaders: # 커스텀 헤더
+              - Location
+              - X-Refresh-URL
+              - X-Needs-Refresh
+              - X-GATE-WAY-KEY
         add-to-simple-url-handler-mapping: true
       metrics:
         enabled: true
@@ -35,7 +41,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,info,env
+        include: health,metrics
       base-path: /actuator
   endpoint:
     health:
@@ -44,4 +50,5 @@ management:
     env:
       enabled: true
 jwt:
-  secret: SGVsbG9AI2UzV3JvbGQhQCN9RHxkc2prZC0oOTBNeVNlY3JldCEyMyRGREcjMw==
+  refresh-token: ZHNrbGZqYWRrbHNmamxrZHNhZmtqbGFzZGZsaztqemxrY3h2anpjdnBvY2l4emp2ODlwajMyNDk4ZkAkQCFAJGZkZ3N6ZHNhZmFkc2Y=
+  access-token: SGVsbG9AI2UzV3JvbGQhQCN9RHxkc2prZC0oOTBNeVNlY3JldCEyMyRGREcjMw==

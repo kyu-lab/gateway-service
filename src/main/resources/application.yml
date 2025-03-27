@@ -1,0 +1,11 @@
+server:
+  port: 8000
+  http2:
+    enabled: true
+spring:
+  application:
+    name: gateway-server
+  data:
+    redis:
+      port: 6379
+      host: localhost
