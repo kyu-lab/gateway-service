@@ -1,10 +1,4 @@
-server:
-  port: 8000
-  http2:
-    enabled: true
 spring:
-  application:
-    name: gateway-server
   cloud:
     gateway:
       routes:
@@ -15,7 +9,7 @@ spring:
         - id: post-service
           uri: http://localhost:8002
           predicates:
-            - Path=/api/post/**, /api/comment/**
+            - Path=/api/post/**, /api/comment/**, /api/group/**, /gateway/group/**
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -40,10 +34,6 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
-  data:
-    redis:
-      port: 6379
-      host: localhost
 eureka:
   client:
     enabled: false
