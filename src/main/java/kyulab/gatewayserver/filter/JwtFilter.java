@@ -46,8 +46,8 @@ public class JwtFilter implements GlobalFilter {
 			return chain.filter(exchange);
 		}
 
-		// 사용자 로그인과 회원가입에는 인증없이 통과한다.
-		if (path.startsWith("/api/users/login") || path.startsWith("/api/users/signup")) {
+		// 사용자 로그인과 회원가입, 비밀번호 초기화는 인증없이 통과한다.
+		if (path.startsWith("/api/users/login") || path.startsWith("/api/users/signup") || path.startsWith("/api/users/change/password")) {
 			if (request.getCookies().containsKey("refresh-token")) {
 				return sendErrorResponse(exchange, HttpStatus.BAD_REQUEST, "Already Login");
 			}
@@ -93,8 +93,6 @@ public class JwtFilter implements GlobalFilter {
 
 				// 토큰이 만료되었다면 다시 토큰을 발급받도록 주소를 보낸다.
 				exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-				exchange.getResponse().getHeaders().add("X-Refresh-URL", "/api/users/refresh");
-				exchange.getResponse().getHeaders().add("Access-Control-Expose-Headers", "X-Refresh-URL");
 				yield exchange.getResponse().setComplete();
 			}
 			case OK -> chain.filter(exchange);
