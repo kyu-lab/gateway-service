@@ -16,6 +16,18 @@ spring:
           uri: http://localhost:8002
           predicates:
             - Path=/api/post/**, /api/comment/**, /api/group/**, /gateway/group/**
+        - id: notices-service
+          uri: http://localhost:8003
+          predicates:
+            - Path=/api/notices/**
+        - id: search-service
+          uri: http://localhost:8004
+          predicates:
+            - Path=/api/search/**
+        - id: file-service
+          uri: http://localhost:8005
+          predicates:
+            - Path=/api/file/**
       globalcors:
         corsConfigurations:
           '[/**]':
