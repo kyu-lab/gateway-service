@@ -9,23 +9,23 @@ spring:
     gateway:
       routes:
         - id: users-service
-          uri: http://localhost:8001
+          uri: lb://USERS-SERVICE
           predicates:
             - Path=/api/users/**, /gateway/users/**
         - id: post-service
-          uri: http://localhost:8002
+          uri: lb://POST-SERVICE
           predicates:
             - Path=/api/post/**, /api/comment/**, /api/group/**, /gateway/group/**
         - id: notices-service
-          uri: http://localhost:8003
+          uri: lb://NOTICES-SERVICE
           predicates:
             - Path=/api/notices/**
         - id: search-service
-          uri: http://localhost:8004
+          uri: lb://SEARCH-SERVICE
           predicates:
             - Path=/api/search/**
         - id: file-service
-          uri: http://localhost:8005
+          uri: lb://FILE-SERVICE
           predicates:
             - Path=/api/file/**
       globalcors:
@@ -53,7 +53,15 @@ spring:
           lower-case-service-id: true
 eureka:
   client:
-    enabled: false
+    enabled: true
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/discovery/eureka
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 120
 management:
   endpoints:
     web:
@@ -61,11 +69,16 @@ management:
         include: health,metrics
       base-path: /actuator
   endpoint:
+    info:
+      access: read_only
     health:
       show-details: always
-  info:
-    env:
-      enabled: true
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.config: WARN
+    org.springframework.boot: WARN
+    kyulab.gatewayserver.filter: DEBUG
 jwt:
   refresh-token: ZHNrbGZqYWRrbHNmamxrZHNhZmtqbGFzZGZsaztqemxrY3h2anpjdnBvY2l4emp2ODlwajMyNDk4ZkAkQCFAJGZkZ3N6ZHNhZmFkc2Y=
   access-token: SGVsbG9AI2UzV3JvbGQhQCN9RHxkc2prZC0oOTBNeVNlY3JldCEyMyRGREcjMw==

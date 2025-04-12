@@ -49,6 +49,7 @@ public class JwtFilter implements GlobalFilter {
 		// 사용자 로그인과 회원가입, 비밀번호 초기화는 인증없이 통과한다.
 		if (path.startsWith("/api/users/login") || path.startsWith("/api/users/signup") || path.startsWith("/api/users/change/password")) {
 			if (request.getCookies().containsKey("refresh-token")) {
+				log.debug("token duplidate : {}", request.getCookies().getFirst("refresh-token"));
 				return sendErrorResponse(exchange, HttpStatus.BAD_REQUEST, "Already Login");
 			}
 			return chain.filter(exchange);
