@@ -13,11 +13,11 @@ import java.util.Base64;
 @Component
 public class SecretUtil {
 
-	@Value("${jwt.access-token:}")
+	@Value("${jwt.access-token:access}")
 	private String accessKeyOrigin;
 	private SecretKey accessKey;
 
-	@Value("${jwt.refresh-token:}")
+	@Value("${jwt.refresh-token:refresh}")
 	private String refreshKeyOrigin;
 	private SecretKey refreshKey;
 
