@@ -15,7 +15,7 @@ spring:
         - id: post-service
           uri: lb://POST-SERVICE
           predicates:
-            - Path=/api/post/**, /api/comment/**, /api/group/**, /gateway/group/**
+            - Path=/api/post/**, /api/comment/**, /api/group/**, /gateway/group/**, /gateway/post/**
         - id: notices-service
           uri: lb://NOTICES-SERVICE
           predicates:
